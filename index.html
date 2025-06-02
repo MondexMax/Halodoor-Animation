@@ -48,12 +48,38 @@
 
                 console.log("Traversing model hierarchy:");
                 function traverseHierarchy(obj, depth = 0) {
-                    console.log("  ".repeat(depth) + "Name:", obj.name, "Type:", obj.type);
-                    obj.children.forEach(child => traverseHierarchy(child, depth + 1));
+                    console.log("  ".repeat(depth) + "Name:", obj.name || "Unnamed", "Type:", obj.type);
+                    if (obj.children && obj.children.length > 0) {
+                        obj.children.forEach(child => traverseHierarchy(child, depth + 1));
+                    }
                 }
                 traverseHierarchy(model);
 
-                // Apply style
+                // Find Scene 0 and 100-1001_A.STEP
+                const scene0 = model.getObjectByName('Scene 0');
+                console.log("Scene 0 found:", scene0);
+
+                if (scene0) {
+                    const group = scene0.getObjectByName('100-1001_A.STEP');
+                    console.log("Group 100-1001_A.STEP found:", group);
+
+                    if (group) {
+                        // Find the 15 parts under the group
+                        for (let i = 1; i <= 15; i++) {
+                            const part = group.getObjectByName(`Part ${i}`);
+                            if (part) {
+                                parts.push(part);
+                                // If the part is a null (group), log its children
+                                if (part.children && part.children.length > 0) {
+                                    console.log(`Children of Part ${i}:`, part.children);
+                                }
+                            }
+                        }
+                        console.log("Found parts:", parts);
+                    }
+                }
+
+                // Apply style to all meshes
                 if (style === 'wireframe') {
                     model.traverse((child) => {
                         if (child.isMesh) {
@@ -74,13 +100,6 @@
                         }
                     });
                 }
-
-                // Find the 15 parts
-                for (let i = 1; i <= 15; i++) {
-                    const part = model.getObjectByName(`Part ${i}`);
-                    if (part) parts.push(part);
-                }
-                console.log("Found parts:", parts);
 
                 // Set up animation
                 mixer = new THREE.AnimationMixer(model);
