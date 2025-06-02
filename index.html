@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll 3D Tech Animation</title>
+    <style>
+        body { margin: 0; height: 2000px; background: #000000; } /* Tall page, black background */
+        canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; }
+    </style>
+</head>
+<body>
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+        // Three.js setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000); // Black background
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // Style toggle: 'wireframe' or 'outline'
+        const style = 'wireframe'; // Change to 'outline' for non-glowing edges
+
+        // Load GLTF model
+        const loader = new THREE.GLTFLoader();
+        let model, mixer, animationClip, parts = [];
+        loader.load(
+            'https://raw.githubusercontent.com/MondexMax/Halodoor/main/Component.glb', // Your .glb
+            (gltf) => {
+                model = gltf.scene;
+                scene.add(model);
+
+                // Apply style
+                if (style === 'wireframe') {
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: 0xffffff, // White wireframe
+                                wireframe: true
+                            });
+                        }
+                    });
+                } else if (style === 'outline') {
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            const edges = new THREE.EdgesGeometry(child.geometry);
+                            const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff }); // White outline
+                            const line = new THREE.LineSegments(edges, lineMaterial);
+                            child.parent.add(line);
+                            child.material = new THREE.MeshBasicMaterial({ visible: false }); // Hide mesh
+                        }
+                    });
+                }
+
+                // Find the 15 parts
+                for (let i = 1; i <= 15; i++) {
+                    const part = model.getObjectByName(`part ${i}`);
+                    if (part) parts.push(part);
+                }
+
+                // Set up animation
+                mixer = new THREE.AnimationMixer(model);
+                if (gltf.animations.length > 0) {
+                    animationClip = gltf.animations[0]; // Use first animation (125 frames)
+                    const action = mixer.clipAction(animationClip);
+                    action.play();
+                    action.paused = true; // Pause until scroll
+                } else {
+                    console.log('No animations found in GLTF. Using manual animation for 15 parts.');
+                }
+
+                // Center model
+                model.position.set(0, 0, 0);
+            },
+            (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
+            (error) => console.error('Error loading model:', error)
+        );
+
+        // Camera position
+        camera.position.z = 5; // Adjust if model is too big/small
+
+        // Animation loop
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            if (mixer) mixer.update(clock.getDelta());
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Resize handling
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Scroll animation with GSAP ScrollTrigger
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.timeline({
+            scrollTrigger: {
+                trigger: document.body,
+                start: 'top top',
+                end: '+=1000', // Adjust for 125-frame animation
+                scrub: 1, // Smooth scroll sync
+                pin: true // Keep canvas fixed
+            }
+        })
+        .to({}, {
+            duration: 1,
+            onUpdate: function() {
+                if (mixer && animationClip) {
+                    // GLTF animation
+                    const progress = this.progress(); // 0 to 1
+                    mixer.setTime(animationClip.duration * progress); // Sync 125-frame animation
+                } else if (parts.length > 0) {
+                    // Manual animation for 15 parts
+                    const progress = this.progress();
+                    parts.forEach((part, index) => {
+                        const offset = index * 0.2; // Stagger motion
+                        part.position.set(
+                            progress * (1 + index * 0.1), // Move right
+                            progress * (0.5 + index * 0.05), // Move up
+                            0
+                        );
+                        if (progress >= 0.5) {
+                            // Reverse for reassembly
+                            part.position.set(
+                                (1 - progress) * (1 + index * 0.1),
+                                (1 - progress) * (0.5 + index * 0.05),
+                                0
+                            );
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
