@@ -17,6 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script>
         console.log("Script is running");
+
         // Three.js setup
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x000000); // Black background
@@ -39,10 +40,11 @@
         const loader = new THREE.GLTFLoader();
         let model, mixer, animationClip, parts = [];
         loader.load(
-            'https://raw.githubusercontent.com/MondexMax/Halodoor/main/Component.glb', // Your .glb
+            'https://raw.githubusercontent.com/MondexMax/Halodoor-Animation/main/Component.glb', // Your .glb
             (gltf) => {
                 model = gltf.scene;
                 scene.add(model);
+                console.log("Model loaded:", model);
 
                 // Apply style
                 if (style === 'wireframe') {
@@ -71,6 +73,7 @@
                     const part = model.getObjectByName(`part ${i}`);
                     if (part) parts.push(part);
                 }
+                console.log("Found parts:", parts);
 
                 // Set up animation
                 mixer = new THREE.AnimationMixer(model);
@@ -79,6 +82,7 @@
                     const action = mixer.clipAction(animationClip);
                     action.play();
                     action.paused = true; // Pause until scroll
+                    console.log("Animation clip loaded:", animationClip);
                 } else {
                     console.log('No animations found in GLTF. Using manual animation for 15 parts.');
                 }
