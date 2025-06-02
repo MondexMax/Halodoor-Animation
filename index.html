@@ -46,8 +46,12 @@
                 scene.add(model);
                 console.log("Model loaded:", model);
 
-                const group = model.getObjectByName('100-1001_A.STEP');
-                console.log("Group found:", group);
+                console.log("Traversing model hierarchy:");
+                function traverseHierarchy(obj, depth = 0) {
+                    console.log("  ".repeat(depth) + "Name:", obj.name, "Type:", obj.type);
+                    obj.children.forEach(child => traverseHierarchy(child, depth + 1));
+                }
+                traverseHierarchy(model);
 
                 // Apply style
                 if (style === 'wireframe') {
