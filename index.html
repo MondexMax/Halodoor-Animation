@@ -46,6 +46,9 @@
                 scene.add(model);
                 console.log("Model loaded:", model);
 
+                const group = model.getObjectByName('100-1001_A.STEP');
+                console.log("Group found:", group);
+
                 // Apply style
                 if (style === 'wireframe') {
                     model.traverse((child) => {
@@ -70,7 +73,7 @@
 
                 // Find the 15 parts
                 for (let i = 1; i <= 15; i++) {
-                    const part = model.getObjectByName(`part ${i}`);
+                    const part = model.getObjectByName(`Part ${i}`);
                     if (part) parts.push(part);
                 }
                 console.log("Found parts:", parts);
