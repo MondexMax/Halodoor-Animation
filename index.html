@@ -105,8 +105,12 @@
                 boundingBox.getCenter(center);
                 console.log("Model center:", center);
 
-                // Adjust camera to fit the model
-                camera.position.set(0, 0, size.length() * 2); // Position camera based on model size
+                // Scale the model to make it more visible
+                model.scale.set(10, 10, 10); // Increase size by 10x
+                console.log("Model scale:", model.scale);
+
+                // Adjust camera to fit the scaled model
+                camera.position.set(0, 0, size.length() * 20); // Adjust for scaled size
                 camera.lookAt(center);
 
                 // Center model
@@ -121,6 +125,7 @@
                     action.play();
                     action.paused = true; // Pause until scroll
                     console.log("Animation clip loaded:", animationClip);
+                    console.log("Animation tracks:", animationClip.tracks);
                 } else {
                     console.log('No animations found in GLTF. Using manual animation for 15 parts.');
                 }
@@ -163,11 +168,17 @@
             duration: 1,
             onUpdate: function() {
                 if (mixer && animationClip) {
-                    // GLTF animation
+                    // GLTF animation for separation
                     const progress = this.progress(); // 0 to 1
                     mixer.setTime(animationClip.duration * progress); // Sync 125-frame animation
-                } else if (parts.length > 0) {
-                    // Manual animation for 15 parts
+                }
+                if (model) {
+                    // Rotate the entire model as you scroll
+                    const progress = this.progress();
+                    model.rotation.y = progress * Math.PI * 2; // Rotate 360 degrees (2π radians)
+                }
+                if (parts.length > 0) {
+                    // Manual animation for separation (fallback)
                     const progress = this.progress();
                     parts.forEach((part, index) => {
                         const offset = index * 0.2; // Stagger motion
